@@ -671,3 +671,14 @@ body {
     gap: 15px;
   }
 }
+
+.slot.touch-over {
+  transform: scale(1.05);
+  border-color: #4CAF50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+}
+
+.bottle {
+  touch-action: none;
+  user-select: none;
+}

@@ -18,9 +18,10 @@ export default function App() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
 
-  /* ---------- 拖拽 ---------- */
+  /* ---------- 拖拽 + 触摸 ---------- */
   const [dragIndex, setDragIndex] = useState(null);
   const [dragColor, setDragColor] = useState(null);
+  const [touchedElement, setTouchedElement] = useState(null);
 
   /* ---------- 开始游戏 ---------- */
   const startGame = () => {
@@ -64,7 +65,7 @@ export default function App() {
     // 猜错时不清空，允许继续调整
   };
 
-  /* ---------- 拖拽逻辑 ---------- */
+  /* ---------- 拖拽逻辑（桌面端） ---------- */
   const handleDragStartPool = (color) => {
     setDragColor(color);
     setDragIndex(null);
@@ -92,6 +93,53 @@ export default function App() {
 
     setDragIndex(null);
     setDragColor(null);
+  };
+
+  /* ---------- 触摸事件处理（移动端） ---------- */
+  const handleTouchStartPool = (e, color) => {
+    e.preventDefault();
+    setDragColor(color);
+    setDragIndex(null);
+    setTouchedElement({ type: 'pool', color });
+  };
+
+  const handleTouchStartSlot = (e, index) => {
+    e.preventDefault();
+    setDragIndex(index);
+    setDragColor(null);
+    setTouchedElement({ type: 'slot', index });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchedElement) return;
+
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+    // 添加视觉反馈
+    document.querySelectorAll('.slot').forEach(slot => {
+      slot.classList.remove('touch-over');
+    });
+
+    if (element && element.closest('.slot')) {
+      element.closest('.slot').classList.add('touch-over');
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    const touch = e.changedTouches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const slot = element?.closest('.slot');
+
+    if (slot && touchedElement) {
+      const slotIndex = Array.from(slot.parentElement.children).indexOf(slot);
+      handleDropSlot(slotIndex);
+    }
+
+    setTouchedElement(null);
+    document.querySelectorAll('.slot').forEach(slot => {
+      slot.classList.remove('touch-over');
+    });
   };
 
   const removeFromSlot = (i) => {
@@ -215,6 +263,9 @@ export default function App() {
                   className={`bottle ${c}`}
                   draggable
                   onDragStart={() => handleDragStartPool(c)}
+                  onTouchStart={(e) => handleTouchStartPool(e, c)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                 >
                   <div className="bottle-cap"></div>
                   <div className="bottle-body"></div>
@@ -240,6 +291,9 @@ export default function App() {
                       className={`bottle ${c}`}
                       draggable
                       onDragStart={() => handleDragStartSlot(i)}
+                      onTouchStart={(e) => handleTouchStartSlot(e, i)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                       onClick={() => removeFromSlot(i)}
                     >
                       <div className="bottle-cap"></div>
