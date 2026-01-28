@@ -5,20 +5,24 @@ const BASE_COLORS = ["red", "blue", "green", "yellow"];
 const EXTRA_COLORS = ["purple", "orange", "pink", "cyan"];
 
 export default function App() {
+  /* ---------- 难度 ---------- */
   const [colors, setColors] = useState([...BASE_COLORS]);
-  const [numSlots, setNumSlots] = useState(4); // 初始槽位数量
+  const [numSlots, setNumSlots] = useState(4);
 
+  /* ---------- 游戏状态 ---------- */
   const [answer, setAnswer] = useState([]);
-  const [guess, setGuess] = useState(Array(numSlots).fill(null));
+  const [guess, setGuess] = useState(Array(4).fill(null));
   const [history, setHistory] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameWon, setGameWon] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
 
+  /* ---------- 拖拽 ---------- */
   const [dragIndex, setDragIndex] = useState(null);
   const [dragColor, setDragColor] = useState(null);
 
-  const [showHistory, setShowHistory] = useState(true);
-
+  /* ---------- 开始游戏 ---------- */
   const startGame = () => {
     const shuffled = [...colors].sort(() => Math.random() - 0.5);
     setAnswer(shuffled.slice(0, numSlots));
@@ -26,59 +30,102 @@ export default function App() {
     setHistory([]);
     setGameStarted(true);
     setGameWon(false);
+    setShowAnswer(false);
   };
 
+  /* ---------- 返回开始 ---------- */
+  const backToStart = () => {
+    setGameStarted(false);
+    setGameWon(false);
+    setAnswer([]);
+    setGuess(Array(numSlots).fill(null));
+    setHistory([]);
+    setShowAnswer(false);
+  };
+
+  /* ---------- 提交 ---------- */
   const filledCount = guess.filter(c => c !== null).length;
   const isGuessFull = filledCount === numSlots;
 
   const submitGuess = () => {
     if (!isGuessFull) return;
-    const correctCount = guess.filter((color, i) => color === answer[i]).length;
+
+    const correctCount = guess.filter(
+      (color, i) => color === answer[i]
+    ).length;
+
     setHistory(prev => [...prev, { guess: [...guess], correctCount }]);
-    if (correctCount === numSlots) setGameWon(true);
-    else setGuess(Array(numSlots).fill(null));
+
+    if (correctCount === numSlots) {
+      setGameWon(true);
+    } else {
+      setGuess(Array(numSlots).fill(null));
+    }
   };
 
-  // 拖拽逻辑
+  /* ---------- 拖拽逻辑 ---------- */
   const handleDragStartPool = (color) => {
     setDragColor(color);
     setDragIndex(null);
   };
+
   const handleDragStartSlot = (index) => {
     setDragIndex(index);
     setDragColor(null);
   };
+
   const handleDropSlot = (index) => {
     setGuess(prev => {
-      const newGuess = [...prev];
+      const next = [...prev];
+
       if (dragIndex !== null) {
-        const temp = newGuess[index];
-        newGuess[index] = newGuess[dragIndex];
-        newGuess[dragIndex] = temp;
+        const tmp = next[index];
+        next[index] = next[dragIndex];
+        next[dragIndex] = tmp;
       } else if (dragColor !== null) {
-        newGuess[index] = dragColor;
+        next[index] = dragColor;
       }
-      return newGuess;
+
+      return next;
     });
+
     setDragIndex(null);
     setDragColor(null);
   };
-  const removeFromSlot = (i) => setGuess(prev => {
-    const newGuess = [...prev];
-    newGuess[i] = null;
-    return newGuess;
-  });
 
-  const toggleHistory = () => setShowHistory(prev => !prev);
+  const removeFromSlot = (i) => {
+    setGuess(prev => {
+      const next = [...prev];
+      next[i] = null;
+      return next;
+    });
+  };
+
+  /* ---------- 其他 ---------- */
+  const toggleHistory = () => setShowHistory(p => !p);
 
   const addColor = () => {
-    if (colors.length >= 8) return;
-    const nextColor = EXTRA_COLORS[colors.length - BASE_COLORS.length];
+    if (numSlots >= 8) return;
+
+    const nextColor =
+      colors.length < BASE_COLORS.length
+        ? BASE_COLORS[colors.length]
+        : EXTRA_COLORS[colors.length - BASE_COLORS.length];
+
     setColors(prev => [...prev, nextColor]);
     setNumSlots(prev => prev + 1);
     setGuess(prev => [...prev, null]);
   };
 
+  const removeColor = () => {
+    if (numSlots <= 2) return;
+
+    setColors(prev => prev.slice(0, -1));
+    setNumSlots(prev => prev - 1);
+    setGuess(prev => prev.slice(0, -1));
+  };
+
+  /* ---------- UI ---------- */
   return (
     <div className="app">
       <h1>🎯 猜瓶子颜色游戏</h1>
@@ -86,10 +133,30 @@ export default function App() {
       {!gameStarted ? (
         <div className="start-screen">
           <p>拖拽瓶子到槽位，猜出正确的颜色顺序！</p>
-          <div>
-            <button className="start-btn" onClick={startGame}>开始游戏</button>
-            <button className="start-btn" onClick={addColor} disabled={colors.length >= 8}>
-              增加难度 (+1 瓶子)
+          <p className="rule">当前难度：{numSlots} 个瓶子</p>
+
+          <div className="difficulty-controls">
+            <button
+              className="start-btn"
+              onClick={removeColor}
+              disabled={numSlots <= 2}
+            >
+              −1 瓶子
+            </button>
+
+            <button
+              className="start-btn"
+              onClick={startGame}
+            >
+              开始游戏
+            </button>
+
+            <button
+              className="start-btn"
+              onClick={addColor}
+              disabled={numSlots >= 8}
+            >
+              +1 瓶子
             </button>
           </div>
         </div>
@@ -98,13 +165,29 @@ export default function App() {
           {gameWon && (
             <div className="win-message">
               🎉 恭喜你！用 {history.length} 次猜对了！
-              <button className="restart-btn" onClick={startGame}>再玩一次</button>
+              <button
+                className="restart-btn"
+                onClick={startGame}
+              >
+                再玩一次
+              </button>
             </div>
           )}
 
           <div className="controls">
             <button className="start-btn" onClick={toggleHistory}>
               {showHistory ? "隐藏历史" : "显示历史"}
+            </button>
+
+            <button
+              className="start-btn"
+              onClick={() => setShowAnswer(p => !p)}
+            >
+              {showAnswer ? "隐藏答案" : "查看答案"}
+            </button>
+
+            <button className="start-btn" onClick={backToStart}>
+              返回开始
             </button>
           </div>
 
@@ -124,12 +207,11 @@ export default function App() {
               <div
                 key={i}
                 className="slot"
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={e => e.preventDefault()}
                 onDrop={() => handleDropSlot(i)}
               >
                 {c && (
                   <div
-                    key={`${c}-${i}`}
                     className={`bottle ${c}`}
                     draggable
                     onDragStart={() => handleDragStartSlot(i)}
@@ -140,22 +222,46 @@ export default function App() {
             ))}
           </div>
 
-          <button className="submit-btn" onClick={submitGuess} disabled={!isGuessFull || gameWon}>
-            {isGuessFull ? "确定" : `还需填入 ${numSlots - filledCount} 个瓶子`}
+          <button
+            className="submit-btn"
+            onClick={submitGuess}
+            disabled={!isGuessFull || gameWon}
+          >
+            {isGuessFull
+              ? "确定"
+              : `还需填入 ${numSlots - filledCount} 个瓶子`}
           </button>
+
+          {showAnswer && (
+            <div className="answer">
+              <h3>答案</h3>
+              <div className="answer-bottles">
+                {answer.map((c, i) => (
+                  <div key={i} className={`bottle ${c}`} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {showHistory && history.length > 0 && (
             <div className="history">
               <h3>历史记录</h3>
               {history.map((h, idx) => (
                 <div key={idx} className="history-item">
-                  <span className="round">第 {idx + 1} 次:</span>
+                  <span className="round">
+                    第 {idx + 1} 次:
+                  </span>
                   <div className="history-bottles">
                     {h.guess.map((color, i) => (
-                      <div key={i} className={`bottle small ${color}`} />
+                      <div
+                        key={i}
+                        className={`bottle small ${color}`}
+                      />
                     ))}
                   </div>
-                  <span className="result">✓ {h.correctCount} 个正确</span>
+                  <span className="result">
+                    ✓ {h.correctCount} 个正确
+                  </span>
                 </div>
               ))}
             </div>

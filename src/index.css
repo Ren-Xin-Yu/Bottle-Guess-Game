@@ -252,3 +252,34 @@ h1 {
 .controls {
   margin: 10px 0;
 }
+
+.answer {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fff7ed;
+  border: 2px dashed #fb923c;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.answer h3 {
+  margin: 0 0 10px;
+  color: #c2410c;
+}
+
+.answer-bottles {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.controls .start-btn + .start-btn {
+  margin-left: 12px;
+}
+
+.difficulty-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
