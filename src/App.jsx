@@ -58,9 +58,10 @@ export default function App() {
 
     if (correctCount === numSlots) {
       setGameWon(true);
-    } else {
+      // 只在猜对时清空
       setGuess(Array(numSlots).fill(null));
     }
+    // 猜错时不清空，允许继续调整
   };
 
   /* ---------- 拖拽逻辑 ---------- */
