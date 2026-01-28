@@ -196,7 +196,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Author - [@Ren-Xin-Yu](cultivatetfey@gmail.com)
 
-Project Link: [https://github.com/Ren-Xin-Yu/color-bottle-puzzle](https://github.com/your-username/color-bottle-puzzle)
+Project Link: [https://github.com/Ren-Xin-Yu/color-bottle-puzzle](https://github.com/Ren-Xin-Yu/color-bottle-puzzle)
 
 ---
 
