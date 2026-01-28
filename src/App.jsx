@@ -128,98 +128,129 @@ export default function App() {
   /* ---------- UI ---------- */
   return (
     <div className="app">
-      <h1>🎯 猜瓶子颜色游戏</h1>
+      <div className="game-header">
+        <h1>🧪 Color Bottle Puzzle</h1>
+        <p className="subtitle">Drag bottles to crack the color code!</p>
+      </div>
 
       {!gameStarted ? (
         <div className="start-screen">
-          <p>拖拽瓶子到槽位，猜出正确的颜色顺序！</p>
-          <p className="rule">当前难度：{numSlots} 个瓶子</p>
+          <div className="game-card">
+            <div className="card-icon">🎮</div>
+            <h2>Game Rules</h2>
+            <p>Drag colorful bottles into slots</p>
+            <p>Guess the correct color sequence</p>
+            <div className="difficulty-badge">
+              Difficulty: {numSlots} Bottles
+            </div>
 
-          <div className="difficulty-controls">
-            <button
-              className="start-btn"
-              onClick={removeColor}
-              disabled={numSlots <= 2}
-            >
-              −1 瓶子
-            </button>
+            <div className="difficulty-controls">
+              <button
+                className="control-btn minus"
+                onClick={removeColor}
+                disabled={numSlots <= 2}
+              >
+                <span>−</span>
+              </button>
 
-            <button
-              className="start-btn"
-              onClick={startGame}
-            >
-              开始游戏
-            </button>
+              <button
+                className="start-btn primary"
+                onClick={startGame}
+              >
+                Start Game
+              </button>
 
-            <button
-              className="start-btn"
-              onClick={addColor}
-              disabled={numSlots >= 8}
-            >
-              +1 瓶子
-            </button>
+              <button
+                className="control-btn plus"
+                onClick={addColor}
+                disabled={numSlots >= 8}
+              >
+                <span>+</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : (
         <>
           {gameWon && (
             <div className="win-message">
-              🎉 恭喜你！用 {history.length} 次猜对了！
-              <button
-                className="restart-btn"
-                onClick={startGame}
-              >
-                再玩一次
-              </button>
+              <div className="win-content">
+                <div className="trophy">🏆</div>
+                <h2>Perfect!</h2>
+                <p>You solved it in {history.length} {history.length === 1 ? 'attempt' : 'attempts'}!</p>
+                <button
+                  className="restart-btn"
+                  onClick={startGame}
+                >
+                  Play Again
+                </button>
+              </div>
             </div>
           )}
 
           <div className="controls">
-            <button className="start-btn" onClick={toggleHistory}>
-              {showHistory ? "隐藏历史" : "显示历史"}
+            <button className="control-btn-small" onClick={toggleHistory}>
+              {showHistory ? "📋 Hide History" : "📋 Show History"}
             </button>
 
             <button
-              className="start-btn"
+              className="control-btn-small"
               onClick={() => setShowAnswer(p => !p)}
             >
-              {showAnswer ? "隐藏答案" : "查看答案"}
+              {showAnswer ? "🔒 Hide Answer" : "🔓 Show Answer"}
             </button>
 
-            <button className="start-btn" onClick={backToStart}>
-              返回开始
+            <button className="control-btn-small back" onClick={backToStart}>
+              ⬅️ Back
             </button>
           </div>
 
           <div className="bottle-pool">
-            {colors.map(c => (
-              <div
-                key={c}
-                className={`bottle ${c}`}
-                draggable
-                onDragStart={() => handleDragStartPool(c)}
-              />
-            ))}
+            <div className="pool-label">Available Bottles</div>
+            <div className="pool-bottles">
+              {colors.map(c => (
+                <div
+                  key={c}
+                  className={`bottle ${c}`}
+                  draggable
+                  onDragStart={() => handleDragStartPool(c)}
+                >
+                  <div className="bottle-cap"></div>
+                  <div className="bottle-body"></div>
+                  <div className="bottle-shine"></div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="guess-area">
-            {guess.map((c, i) => (
-              <div
-                key={i}
-                className="slot"
-                onDragOver={e => e.preventDefault()}
-                onDrop={() => handleDropSlot(i)}
-              >
-                {c && (
-                  <div
-                    className={`bottle ${c}`}
-                    draggable
-                    onDragStart={() => handleDragStartSlot(i)}
-                    onClick={() => removeFromSlot(i)}
-                  />
-                )}
-              </div>
-            ))}
+            <div className="area-label">Your Guess</div>
+            <div className="slots-container">
+              {guess.map((c, i) => (
+                <div
+                  key={i}
+                  className="slot"
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={() => handleDropSlot(i)}
+                >
+                  <div className="slot-number">{i + 1}</div>
+                  {c ? (
+                    <div
+                      className={`bottle ${c}`}
+                      draggable
+                      onDragStart={() => handleDragStartSlot(i)}
+                      onClick={() => removeFromSlot(i)}
+                    >
+                      <div className="bottle-cap"></div>
+                      <div className="bottle-body"></div>
+                      <div className="bottle-shine"></div>
+                    </div>
+                  ) : (
+                    <div className="empty-slot">?</div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           <button
@@ -228,16 +259,20 @@ export default function App() {
             disabled={!isGuessFull || gameWon}
           >
             {isGuessFull
-              ? "确定"
-              : `还需填入 ${numSlots - filledCount} 个瓶子`}
+              ? "🎯 Submit Answer"
+              : `Need ${numSlots - filledCount} more ${numSlots - filledCount === 1 ? 'bottle' : 'bottles'}`}
           </button>
 
           {showAnswer && (
             <div className="answer">
-              <h3>答案</h3>
+              <h3>🔑 Correct Answer</h3>
               <div className="answer-bottles">
                 {answer.map((c, i) => (
-                  <div key={i} className={`bottle ${c}`} />
+                  <div key={i} className={`bottle ${c}`}>
+                    <div className="bottle-cap"></div>
+                    <div className="bottle-body"></div>
+                    <div className="bottle-shine"></div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -245,25 +280,29 @@ export default function App() {
 
           {showHistory && history.length > 0 && (
             <div className="history">
-              <h3>历史记录</h3>
-              {history.map((h, idx) => (
-                <div key={idx} className="history-item">
-                  <span className="round">
-                    第 {idx + 1} 次:
-                  </span>
-                  <div className="history-bottles">
-                    {h.guess.map((color, i) => (
-                      <div
-                        key={i}
-                        className={`bottle small ${color}`}
-                      />
-                    ))}
+              <h3>📜 History</h3>
+              <div className="history-list">
+                {history.map((h, idx) => (
+                  <div key={idx} className="history-item">
+                    <div className="history-round">#{idx + 1}</div>
+                    <div className="history-bottles">
+                      {h.guess.map((color, i) => (
+                        <div
+                          key={i}
+                          className={`bottle small ${color}`}
+                        >
+                          <div className="bottle-cap"></div>
+                          <div className="bottle-body"></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="history-result">
+                      <span className="correct-count">{h.correctCount}</span>
+                      <span className="correct-label">correct</span>
+                    </div>
                   </div>
-                  <span className="result">
-                    ✓ {h.correctCount} 个正确
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </>
