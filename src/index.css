@@ -39,6 +39,10 @@ h1 {
   background: #2563eb;
 }
 
+.start-screen .start-btn + .start-btn {
+  margin-left: 15px;
+}
+
 /* 胜利消息 */
 .win-message {
   background: #22c55e;
@@ -232,10 +236,19 @@ h1 {
 .blue { background: #3b82f6; }
 .green { background: #22c55e; }
 .yellow { background: #eab308; }
+.purple { background: #a855f7; }
+.orange { background: #f97316; }
+.pink { background: #ec4899; }
+.cyan { background: #06b6d4; }
+
 
 .rule {
   font-size: 14px;
   color: #f59e0b;
   font-weight: bold;
   margin-top: 10px;
+}
+
+.controls {
+  margin: 10px 0;
 }
