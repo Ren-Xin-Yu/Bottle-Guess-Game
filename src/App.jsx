@@ -17,6 +17,7 @@ export default function App() {
   const [gameWon, setGameWon] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
+  const [lastResult, setLastResult] = useState(null); // 新增：保存最后一次猜测结果
 
   /* ---------- 拖拽 ---------- */
   const [dragIndex, setDragIndex] = useState(null);
@@ -37,6 +38,7 @@ export default function App() {
     setGameStarted(true);
     setGameWon(false);
     setShowAnswer(false);
+    setLastResult(null); // 重置结果
   };
 
   /* ---------- 返回开始 ---------- */
@@ -47,6 +49,7 @@ export default function App() {
     setGuess(Array(numSlots).fill(null));
     setHistory([]);
     setShowAnswer(false);
+    setLastResult(null);
   };
 
   /* ---------- 提交 ---------- */
@@ -61,6 +64,7 @@ export default function App() {
     ).length;
 
     setHistory(prev => [...prev, { guess: [...guess], correctCount }]);
+    setLastResult({ guess: [...guess], correctCount }); // 保存结果
 
     if (correctCount === numSlots) {
       setGameWon(true);
@@ -371,6 +375,18 @@ export default function App() {
               ))}
             </div>
           </div>
+
+          {/* 新增：当前结果显示 */}
+          {lastResult && !gameWon && (
+            <div className="current-result">
+              <div className="result-icon">
+                {lastResult.correctCount === numSlots ? '✅' : '🎯'}
+              </div>
+              <div className="result-text">
+                Last attempt: <span className="result-number">{lastResult.correctCount}</span> / {numSlots} correct
+              </div>
+            </div>
+          )}
 
           <button
             className="submit-btn"
