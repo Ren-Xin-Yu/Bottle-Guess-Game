@@ -18,10 +18,15 @@ export default function App() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
 
-  /* ---------- 拖拽 + 触摸 ---------- */
+  /* ---------- 拖拽 ---------- */
   const [dragIndex, setDragIndex] = useState(null);
   const [dragColor, setDragColor] = useState(null);
-  const [touchedElement, setTouchedElement] = useState(null);
+
+  /* ---------- 触摸拖拽状态 ---------- */
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedBottle, setDraggedBottle] = useState(null);
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
 
   /* ---------- 开始游戏 ---------- */
   const startGame = () => {
@@ -59,13 +64,11 @@ export default function App() {
 
     if (correctCount === numSlots) {
       setGameWon(true);
-      // 只在猜对时清空
       setGuess(Array(numSlots).fill(null));
     }
-    // 猜错时不清空，允许继续调整
   };
 
-  /* ---------- 拖拽逻辑（桌面端） ---------- */
+  /* ---------- 桌面端拖拽逻辑 ---------- */
   const handleDragStartPool = (color) => {
     setDragColor(color);
     setDragIndex(null);
@@ -95,51 +98,97 @@ export default function App() {
     setDragColor(null);
   };
 
-  /* ---------- 触摸事件处理（移动端） ---------- */
+  /* ---------- 移动端触摸逻辑 ---------- */
   const handleTouchStartPool = (e, color) => {
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setIsDragging(true);
+    setDraggedBottle({ type: 'pool', color });
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
+    setDragStartPos({ x: rect.left, y: rect.top });
+
+    // 防止页面滚动
     e.preventDefault();
-    setDragColor(color);
-    setDragIndex(null);
-    setTouchedElement({ type: 'pool', color });
   };
 
   const handleTouchStartSlot = (e, index) => {
+    if (!guess[index]) return; // 空槽位不能拖拽
+
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setIsDragging(true);
+    setDraggedBottle({ type: 'slot', index, color: guess[index] });
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
+    setDragStartPos({ x: rect.left, y: rect.top });
+
     e.preventDefault();
-    setDragIndex(index);
-    setDragColor(null);
-    setTouchedElement({ type: 'slot', index });
   };
 
   const handleTouchMove = (e) => {
-    if (!touchedElement) return;
+    if (!isDragging) return;
 
     const touch = e.touches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
 
-    // 添加视觉反馈
+    // 高亮目标槽位
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
     document.querySelectorAll('.slot').forEach(slot => {
       slot.classList.remove('touch-over');
     });
 
-    if (element && element.closest('.slot')) {
-      element.closest('.slot').classList.add('touch-over');
+    const slot = element?.closest('.slot');
+    if (slot) {
+      slot.classList.add('touch-over');
     }
+
+    e.preventDefault();
   };
 
   const handleTouchEnd = (e) => {
-    const touch = e.changedTouches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    const slot = element?.closest('.slot');
-
-    if (slot && touchedElement) {
-      const slotIndex = Array.from(slot.parentElement.children).indexOf(slot);
-      handleDropSlot(slotIndex);
+    if (!isDragging || !draggedBottle) {
+      setIsDragging(false);
+      setDraggedBottle(null);
+      return;
     }
 
-    setTouchedElement(null);
+    const touch = e.changedTouches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetSlot = element?.closest('.slot');
+
+    if (targetSlot) {
+      const slots = Array.from(targetSlot.parentElement.children);
+      const targetIndex = slots.indexOf(targetSlot);
+
+      if (targetIndex !== -1) {
+        setGuess(prev => {
+          const next = [...prev];
+
+          if (draggedBottle.type === 'pool') {
+            // 从颜色池拖到槽位
+            next[targetIndex] = draggedBottle.color;
+          } else if (draggedBottle.type === 'slot') {
+            // 槽位之间交换
+            const sourceIndex = draggedBottle.index;
+            const tmp = next[targetIndex];
+            next[targetIndex] = next[sourceIndex];
+            next[sourceIndex] = tmp;
+          }
+
+          return next;
+        });
+      }
+    }
+
+    // 清理状态
+    setIsDragging(false);
+    setDraggedBottle(null);
     document.querySelectorAll('.slot').forEach(slot => {
       slot.classList.remove('touch-over');
     });
+
+    e.preventDefault();
   };
 
   const removeFromSlot = (i) => {
@@ -176,7 +225,26 @@ export default function App() {
 
   /* ---------- UI ---------- */
   return (
-    <div className="app">
+    <div className="app" onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      {/* 拖拽中的瓶子 */}
+      {isDragging && draggedBottle && (
+        <div
+          className={`bottle dragging ${draggedBottle.color}`}
+          style={{
+            position: 'fixed',
+            left: dragPosition.x - 30,
+            top: dragPosition.y - 40,
+            pointerEvents: 'none',
+            zIndex: 1000,
+            opacity: 0.8,
+          }}
+        >
+          <div className="bottle-cap"></div>
+          <div className="bottle-body"></div>
+          <div className="bottle-shine"></div>
+        </div>
+      )}
+
       <div className="game-header">
         <h1>🧪 Color Bottle Puzzle</h1>
         <p className="subtitle">Drag bottles to crack the color code!</p>
@@ -260,12 +328,10 @@ export default function App() {
               {colors.map(c => (
                 <div
                   key={c}
-                  className={`bottle ${c}`}
+                  className={`bottle ${c} ${isDragging && draggedBottle?.type === 'pool' && draggedBottle?.color === c ? 'dragging-source' : ''}`}
                   draggable
                   onDragStart={() => handleDragStartPool(c)}
                   onTouchStart={(e) => handleTouchStartPool(e, c)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
                 >
                   <div className="bottle-cap"></div>
                   <div className="bottle-body"></div>
@@ -288,13 +354,11 @@ export default function App() {
                   <div className="slot-number">{i + 1}</div>
                   {c ? (
                     <div
-                      className={`bottle ${c}`}
+                      className={`bottle ${c} ${isDragging && draggedBottle?.type === 'slot' && draggedBottle?.index === i ? 'dragging-source' : ''}`}
                       draggable
                       onDragStart={() => handleDragStartSlot(i)}
                       onTouchStart={(e) => handleTouchStartSlot(e, i)}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={handleTouchEnd}
-                      onClick={() => removeFromSlot(i)}
+                      onDoubleClick={() => removeFromSlot(i)}
                     >
                       <div className="bottle-cap"></div>
                       <div className="bottle-body"></div>
